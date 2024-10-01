@@ -1,14 +1,18 @@
 '''  cross_links.py 
  
- Python script to process XML data files to produce suggestions for cross-linking pages
  
- Ideally this script processes an XML file created by a backup of the entire wiki site
-
- Scans an exported XML file of the entire site
- 1) Imports the list of pages produced by sitemap.py
- 2) Scans XML file pages to identify links already in place to other pages
- 3) Identifies likely matches with pages not already linked
- 3) Produces a list of suggested cross linking candidates
+ Python script for cross-linking pages
+ 
+ A pages file provides a full list of site pages, with a reference name, the actual page name, 
+ extracted categories, timestamp, lifespan, and page summary. Each item is separated with a vertical bar.
+ 
+ A pages reference file lists pages (in the same format) to be processed. A limited subset of pages
+ can be used, or a copy of the pages reference file. 
+ 
+ Pages are downloaded using PyWikibot methods, edited, and uploaded after editing.
+ 
+ A text interface enables the user to see suggested links and hyperlinks allow the user
+ to see the relevant wiki pages when needed.
  
  Version 5: 240914
  
