@@ -36,6 +36,11 @@
  Added explanatory comments
  Curly apostrophe fix does not affect editing text, only search text in locating potential links
   
+ Version 6.4:
+ Clean Wiki Text also removes external links [ ... ] 
+ Bugs removed from EditString package, Clean_Wiki_Text upgraded with more log file reporting.
+ Bugs removed from link over lap detector
+  
 '''
 import os
 import re 
@@ -336,7 +341,7 @@ class EditString:
     snipped = False
     new_edits =[]
     length = en_pt - st_pt
-    #print("Snip at:",str(st_pt))
+    outfile.write("Snip at: " + str(st_pt) + " " + str(en_pt) + " |" + self.__n_string[st_pt:en_pt] + "\n")
 
     if self.__edits == []:
       new_edits = [(st_pt, en_pt, st_pt, en_pt, 0)]
@@ -347,14 +352,14 @@ class EditString:
 
     else:
       for edit in self.__edits:
-        if edit[2] >= st_pt:
+        if edit[0] > st_pt + offset:
           if not snipped:
             new_edits += [(st_pt + offset, en_pt + offset, st_pt, en_pt, 0)]  # creat edit record and delete text from n_string
             snipped = True
             self.__n_string = self.__n_string[:st_pt] + self.__n_string[en_pt:]
             self.__d_string = self.__d_string[:st_pt] + self.__d_string[en_pt:]
             #print("-snip-")
-          new_edits += [(edit[0], edit[1], edit[2]-length, edit[3]-length, 0)] # subsequent edits all have to be mvoed back after n_string shortened
+          new_edits += [(edit[0], edit[1], edit[2]-length, edit[3]-length, 0)] # subsequent edits all have to be moved back after n_string shortened
         else:  
           new_edits += [edit]  # build new list of edits
           offset += edit[1] - edit[0]  # increment offset by length of snipped section
@@ -376,12 +381,12 @@ class EditString:
     n_string = self.__n_string
     offset = 0
     for edit in self.__edits:
-      print("edit",str(edit[0]), str(edit[1]), str(edit[2]), o_string[edit[0]:edit[1]])
+      outfile.write(str(edit[0]) + " " + str(edit[1]) + " " + str(edit[2]) + " " + str(edit[3]) + " " + str(edit[4]) + " " + o_string[edit[0]:edit[1]] + "\n")
       if offset != edit[0] - edit[2]:
-        print("Offset mismatch:",str(offset), str(edit[0]-edit[2]))
+        outfile.write("Offset mismatch:" + " " + str(offset) + " " + str(edit[0]-edit[2]) + "\n")
       offset += edit[1] - edit[0]
       if o_string[edit[1]:edit[1]+5] != o_string[edit[1]:edit[1]+5]:
-        print("mismatched text original:",o_string[edit[1]:edit[1]+5]," edited:", o_string[edit[1]:edit[1]+5])
+        outfile.write("mismatched text original:" + " " + o_string[edit[1]:edit[1]+5] + " " + " edited:" + " " +  o_string[edit[1]:edit[1]+5] + "\n")
     return  
 
   
@@ -389,7 +394,7 @@ class EditString:
     offset = 0
     inserted = False
     for edit in self.__edits:
-      if edit[0] >= st_pt + offset: # edit lies beyond st_p
+      if edit[0] > st_pt + offset: # edit lies beyond st_p
         pass
       else:
         offset += edit[1] - edit[0]
@@ -398,12 +403,13 @@ class EditString:
   def limits(self, st_pt):  # return limits for selecting text in n_string
     offset = 0
     last_p = 0
+    last_edit = self.__edits[0]
     for edit in self.__edits:
-      if edit[2] >= st_pt: # edit lies beyond st_p
-        return (last_p, edit[2])
+      if edit[0] > st_pt + offset: # edit lies beyond st_p
+        return (last_edit[1] - offset, edit[2])
       else:
         offset += edit[1] - edit[0]
-        last_p = edit[3]
+        last_edit = edit
     return (edit[3],len(self.__n_string))
 
   def replace(self, st_pt, en_pt, text):  # replace text from st_pt to en_pt in original string
@@ -418,7 +424,7 @@ class EditString:
     diff = len(text) - (en_pt - st_pt)
     inserted = False
     for edit in self.__edits:
-      if edit[0] >= st_pt:
+      if edit[0] > st_pt:
         if not inserted:
           inserted = True
           new_edits += [(st_pt, st_pt + diff, st_pt-offset, en_pt-offset, 1)] # creat new edit entry
@@ -510,9 +516,10 @@ def clean_wikitext(wikitext,editing):
   text_p = re.search(r'\<text(.+?)\>', search_string)  # search for start of text
   if text_p != None:
     en_pt = text_p.end()
-#    print("snip <text",str(en_pt))  
+    outfile.write("\nsnip <text" + " " + str(en_pt) +"\n")  
     search_string = editing.snip(0,en_pt)  # cut off opening XML 
   
+  #display_edited_text(editing)
   m_pt = 0
   search_string = editing.n_string()
   finished = False
@@ -520,9 +527,10 @@ def clean_wikitext(wikitext,editing):
   if pat_p != None:
       en_pt = len(search_string)
       st_pt = pat_p.start() + m_pt
-#      print("snipping References... ",str(s_pt),str(m_pt))  
+      outfile.write("\nsnipping References... " + " " + str(st_pt) + " " + str(m_pt) +"\n")  
       search_string = editing.snip(st_pt,en_pt) # in case of references, cut off all of the rest of the text
 
+  #display_edited_text(editing)
   m_pt = 0
   search_string = editing.n_string()
   finished = False
@@ -531,13 +539,14 @@ def clean_wikitext(wikitext,editing):
     if pat_p != None:
       en_pt = pat_p.end() + m_pt
       st_pt = pat_p.start() + m_pt
-#      print("snipping <ref> ... </ref>",str(s_pt),str(m_pt))  
+      outfile.write("\nsnipping <ref> ... </ref>" + " " + str(st_pt) + " " + str(m_pt) + "\n")  
       search_string = editing.snip(st_pt,en_pt)
       m_pt = st_pt 
     else:
       finished = True
   
-#  editing.checker() 
+  #display_edited_text(editing)
+  editing.checker() 
   m_pt = 0
   search_string = editing.n_string()
   finished = False
@@ -546,13 +555,14 @@ def clean_wikitext(wikitext,editing):
     if pat_p != None:
       en_pt = pat_p.end() + m_pt
       st_pt = pat_p.start() + m_pt
-#      print("snipping {{ ... }}",str(s_pt),str(m_pt))  
+      outfile.write("\nsnipping {{ ... }}" + " " + str(st_pt) + " " + str(m_pt) + "\n")  
       search_string = editing.snip(st_pt,en_pt)
       m_pt = st_pt 
     else:
       finished = True
         
-#  editing.checker() 
+  #display_edited_text(editing)
+  editing.checker() 
   m_pt = 0
   search_string = editing.n_string()
   finished = False
@@ -561,27 +571,46 @@ def clean_wikitext(wikitext,editing):
     if pat_p != None:
       en_pt = pat_p.end() + m_pt
       st_pt = pat_p.start() + m_pt
-#      print("snipping [[ ... ]]",str(s_pt),str(m_pt))  
+      outfile.write("\nsnipping [[ ... ]]" + " " + str(st_pt) + " " + str(m_pt) + "\n")  
       search_string = editing.snip(st_pt,en_pt)
       m_pt = st_pt 
     else:
       finished = True
 
-#  editing.checker() 
+  #display_edited_text(editing)
+  editing.checker() 
   m_pt = 0
   search_string = editing.n_string()
   finished = False
   while not finished:
-    pat_p = re.search(r'<(.+?)>', search_string[m_pt:]) # remove < --- > wiki directives
+    pat_p = re.search(r'\[(.+?)\]', search_string[m_pt:],re.MULTILINE | re.DOTALL) # remove [ --- ] external links
     if pat_p != None:
       en_pt = pat_p.end() + m_pt
       st_pt = pat_p.start() + m_pt
-#      print("snipping <  > ",str(s_pt),str(m_pt))  
+      outfile.write("\nsnipping [ ... ]" + " " + str(st_pt) + " " + str(m_pt) + "\n")  
       search_string = editing.snip(st_pt,en_pt)
       m_pt = st_pt 
     else:
       finished = True
 
+  #display_edited_text(editing)
+  editing.checker() 
+  m_pt = 0
+  search_string = editing.n_string()
+  finished = False
+  while not finished:
+    pat_p = re.search(r'\<(.+?)\>', search_string[m_pt:]) # remove < --- > wiki directives
+    if pat_p != None:
+      en_pt = pat_p.end() + m_pt
+      st_pt = pat_p.start() + m_pt
+      outfile.write("\nsnipping <  > " + " " + str(st_pt) + " " + str(m_pt) + "\n")  
+      search_string = editing.snip(st_pt,en_pt)
+      m_pt = st_pt 
+    else:
+      finished = True
+
+  #display_edited_text(editing)
+  editing.checker() 
 
 #  outfile.write("\n\n================\n" + editing.n_string() + "\n================\n\n")  
   return editing
@@ -651,6 +680,7 @@ def separate_text(sep, text):
 #  1 - two or more overlapping link suggestions - user can only select one
 #  2 - accepted link
 #  3 - link overlaps with a link accepted by user - cannot be selected
+#  4 - link undone - set overlapping neighbours t0 4, then reset them all to 1 at the end of the function
 #
 #  Each group of numbers in the overlap table specifies what is to happen with the acceptance status
 #  Group element 1: previous link status
@@ -659,37 +689,60 @@ def separate_text(sep, text):
 #  Group element 4: new value for current link status 
 #
 def mark_overlaps(linklist):
-  overlap_table = [[0,0,1,1], [1,0,1,1], [0,1,1,1], [1,1,1,1], [2,0,2,3], [0,2,3,2], [2,2,2,2], [2,1,2,3], [1,2,3,2], [3,0,1,1], [0,3,1,1], [3,3,3,3], [2,3,2,3], [3,2,3,2], [1,3,1,1], [3,1,1,1]]
+  overlap_table = [[0,0,1,1], [1,0,1,1], [0,1,1,1], [1,1,1,1], [2,0,2,3], [0,2,3,2], [2,2,2,2], [2,1,2,3], [1,2,3,2], 
+  [3,0,3,3], [0,3,3,3], [3,3,3,3], [2,3,2,3], [3,2,3,2], [1,3,3,3], [3,1,3,3],
+  [4,3,4,4], [3,4,4,4], [0,4,0,0], [4,0,0,0]]
   
 
   st = 0   # used to remember parameters of previous link
   en = 0
   ac = 0
+  changes = 1
+  while changes > 0:
+    changes = 0
+    i = 0
+    outfile.write("Adjusting links for overlaps:\n")
+    for link in linklist:
+      outfile.write("CL: " + str(link[0]) + "-" + str(link[1]) + " " + str(link[2]) + "-" + str(link[3]) + " " + str(link[4]) + " " + link[5] + " " + link[6][4] + "\n")
+      newlink = link
+      if link[2] <= en and i > 0:                # this link starts before end of previous link  => overlap
+        outfile.write("overlap detected\n")
+  
+        if ac == 2 and link[4] == 2:             # two links accepted at same location: should never occur
+          print("Overlapping link created!")  
+          time.sleep(0.5)
+          outfile.write("Overlapping link created to " + link[5] + " (" + str(st) + "--" + str(en) + " and " + str(link[2]) + "--" + str(link[3]) + "\n")
+        for group in overlap_table:
+          if ac == group[0] and link[4] == group[1]:
+            linp = linklist[i-1] # label prev link 
+            linq = linp
+            prevlink = (linp[0], linp[1], linp[2], linp[3], group[2], linp[5], linp[6])      
+            if prevlink != linq:
+              changes += 1
+            linklist[i-1] = prevlink
+            newlink = (link[0], link[1], link[2], link[3], group[3], link[5], link[6])  
+            if newlink != linklist[i]:
+              changes += 1
+                  
+  
+      linklist[i] = newlink
+      st = link[2]
+      en = link[3]
+      ac = linklist[i][4]
+      i += 1
+      if changes > 0:
+        outfile.write(str(changes) + " changes noticed\n")
+  
   i = 0
-  for link in linklist:
-    outfile.write("CL: " + str(link[0]) + "-" + str(link[1]) + " " + str(link[2]) + "-" + str(link[3]) + " " + str(link[4]) + " " + link[5] + " " + link[6][4] + "\n")
-    newlink = link
-    if link[2] <= en and i > 0:                # this link starts before end of previous link  => overlap
-      outfile.write("overlap detected\n")
-
-      if ac == 2 and link[4] == 2:             # two links accepted at same location: should never occur
-        print("Overlapping link created!")  
-        time.sleep(0.5)
-        outfile.write("Overlapping link created to " + link[5] + " (" + str(st) + "--" + str(en) + " and " + str(link[2]) + "--" + str(link[3]) + "\n")
-      for group in overlap_table:
-        if ac == group[0] and link[4] == group[1]:
-          linp = linklist[i-1] # label prev link 
-          prevlink = (linp[0], linp[1], linp[2], linp[3], group[2], linp[5], linp[6])      
-          linklist[i-1] = prevlink
-          newlink = (link[0], link[1], link[2], link[3], group[3], link[5], link[6])  
-                
-
-    linklist[i] = newlink
-    st = link[2]
-    en = link[3]
-    ac = link[4]
-    i += 1
+  for link in linklist:   #  any links set to 4 must be reset to 1 as this will indicate a link undone.
+    if link[4] == 4:
+      newlink = (link[0], link[1], link[2], link[3], 1, link[5], link[6])
+      linklist[i] = newlink
+    i += 1  
+  
+        
   return linklist            
+
 
 #===============================================================================================================
 #
@@ -972,8 +1025,9 @@ def evaluate_links(editing, linklist, scan_page_link):
         wikitext = editing.o_string()          #
         outfile.write("Offset:" + str(offset1) + " change:" + str(offset1-offset) + "\n")
         outfile.write("\nRemoved wlink:\"" + wikitext[st_pt_act-100+offset:en_pt_act+180+offset] + "\"\n")
-        newlink = (st_pt, en_pt, st_pt_act, en_pt_act, 0, pagelink, display_items) 
+        newlink = (st_pt, en_pt, st_pt_act, en_pt_act, 4, pagelink, display_items) # temp'y mark this link as 4 to denote it was undone
         linklist[link_p] = newlink
+        
         outfile.write("List of potential links: " + str(len(linklist)) + " links in list\n")
         for link in linklist:
           outfile.write("Link: " + str(link[0]) + "-" + str(link[1]) + " " + str(link[2]) + "-" + str(link[3]) + " " + str(link[4]) + " " + link[5] + " " + link[6][4] + "\n")
@@ -1187,7 +1241,7 @@ def suggested_links_list(pagetext, page_items, pages_list):
    #outfile.write("\n\n$$$= = = = = = =" + cleantext + "\n= = = = = = =\n\n")  
    
    for link in linklist:
-     if link[4]:
+     if link[4] == 2:
        nlinks += 1
        
    return (abort,nlinks,editing.o_string())                  # return any signal that we want to exit, links list and new page text
