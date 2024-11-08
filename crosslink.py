@@ -43,6 +43,9 @@
  
  Version 6.5
  Integrated into structure with other apps 
+ 
+ Version 6.6
+ Additional data file alt_pages_ref.txt stores alternate names for people, organizations, etc. <name>|page name
   
 '''
 import os
@@ -55,12 +58,12 @@ from colorama import Fore, Back, Style, Cursor
 
 log_file_name = "crosslink_log.txt"                                           # log file name
 outfile = open(log_file_name,"w",encoding="utf-8")                            # log file reporting all operations completed
-
-pages_input_file_name = "new_pages_ref.txt"                                   # list of pages to be processed
+pages_ref_file_name = "pages_ref.txt"                                         # list of pages on site with names, summaries
+pages_input_file_name = "crosslink_pages.txt"                                 # list of pages to be processed
+alternate_names_file = "alt_pages_ref.txt"                                    # alternate names for pages
 pages_done_file_name = "pages_crosslinked.txt"                                # list of pages completed
 wkg_folder = "C:/Users/HP/OneDrive - Close Comfort Pty Ltd/Documents/Python/" # working directory (with slash)
 site_URL = "https://eha.mywikis.wiki/wiki/"
-pages_file_name = "pages_ref.txt"                                             # list of pages on site with names, summaries
 
 
 #=========================================================================================================
@@ -1061,7 +1064,7 @@ def evaluate_links(editing, linklist, scan_page_link):
 #
 # 
 #
-def suggested_links_list(pagetext, page_items, pages_list):
+def suggested_links_list(pagetext, page_items, pages_list, alt_pages_list):   # 6.6
 
    page_link = page_items[1]  
    outfile.write("Page name:" + page_link + "   " + "Name_page:" + page_items[0])
@@ -1222,6 +1225,93 @@ def suggested_links_list(pagetext, page_items, pages_list):
          else:
            found = False                                            # there are no more instances anyway
          
+   
+   # 6.6 introduced this section looking for alternate names
+   
+   for page in alt_pages_list:  #  extract text delimited by vertical bars
+     items = separate_text(r'\|',page)
+     if len(items) > 4:  # otherwise insufficent data for reliable matching, possibly malformed entry in pages_list
+       pp = False
+       org = False
+       others = False
+       match_lifespan = ""
+       pagetitle = items[0]   #  page name (possibly simplified for orgs and places)  
+       match_link = items[1]
+       #
+       #  separate text on colon
+       #
+       name_items = separate_text(r'\:', pagetitle)
+       match_cats = items[2]
+       if name_items[0] == "Person":  
+         names = separate_text(r',',name_items[1])
+         pp = True
+         match_name = names[0]
+         match_lifespan = items[4]
+         match_summary = items[5]
+         match_link = items[1]
+       elif name_items[0] == "Profile":
+         names = separate_text(r',',name_items[1])
+         match_name = names[0]
+         pp = True
+         match_lifespan = items[4]
+         match_summary = items[5]
+         match_link = items[1]
+       elif name_items[0] == "Organisation":
+         org = True
+         match_name = name_items[1]
+         match_lifespan = items[4]
+         match_summary = items[5]
+         match_link = items[1]
+       elif name_items[0] == "Place":
+         match_name = name_items[1]
+         match_link = items[1]
+         match_summary = items[4]
+       else:
+         match_name = pagetitle  
+         match_summary = items[4]
+         match_link = items[1]
+  
+                 
+       #print("search for: " + name)
+     
+       match_name = re.sub("’","'",match_name)  # clean up curly apostrophies
+       #outfile.write("Matching " + match_name + "\n")
+
+       found = True
+       stext = cleantext
+       percent = 0.0
+       nlinks = 0
+       m_pt = 0
+       accepted = False
+
+   #  page_items consists of 
+   #  [0]  -  page name of scanned page
+   #  [1]  -  lifespan
+   #  [2]  -  categories
+   #  [3]  -  summary
+   #  [4]  -  name of potential match
+   #  [5]  -  lifespan
+   #  [6]  -  categories
+   #  [7]  -  summary
+
+       display_items = (page_items[0], page_lifespan, page_cats, page_summary, match_name, match_lifespan, match_cats, match_summary)
+       
+       while found:                                                  # keep searching page text until there are no more instances of 'name'
+         name_p = re.search(r'\b' + match_name + r'\b', stext[m_pt:])      # search for next instance
+         if name_p != None and page_surname != match_name and next_name != match_name and page_link != match_link:  
+         # must not match 'next_name' normally the first name of the person we are looking for, nor must a link refer to the same page
+           st_pt = name_p.start()                                    # note start and end of instance
+           en_pt = name_p.end()
+           distance = st_pt                                          # check location... if next instance closer than 80 chars 
+           linklist += [(st_pt + m_pt, en_pt + m_pt, st_pt + m_pt, en_pt + m_pt, 0, match_link, display_items)]
+           m_pt = en_pt + m_pt                                      # search from here for next instance
+           if len(stext[m_pt:]) < 30:                               # unless we are almost at the end of the page text
+             found = False
+         else:
+           found = False                                            # there are no more instances anyway
+
+   
+   
    # Now linklist has all the potential link matches on the page - sort into order of position on the page
    linklist = sorted(linklist, key=lambda x: x[0])
    outfile.write("List of potential links: " + str(len(linklist)) + " links in list\n")
@@ -1260,8 +1350,9 @@ def suggested_links_list(pagetext, page_items, pages_list):
 
 
 
-# Read page file list
-ref_pages_list = read_list_file(wkg_folder + pages_file_name)
+# Read reference page file list
+ref_pages_list = read_list_file(wkg_folder + pages_ref_file_name)      # 6.6
+alt_pages_list = read_list_file(wkg_folder + alternate_names_file)     # 6.6
 
 # Process the list of pages to be done
 pages_input_list = read_list_file(wkg_folder + pages_input_file_name)
@@ -1270,6 +1361,10 @@ pages_done_list = read_list_file(wkg_folder + pages_done_file_name)
 
 pages_done_file = open(wkg_folder + pages_done_file_name,"a",encoding="utf-8")  
 
+outfile.write("Pages to be crosslinked:\n")       # 6.6
+for pagetitle in pages_input_list:                # 6.6
+  outfile.write(pagetitle)                        # 6.6
+  
 for pagetitle in pages_input_list:
   if pagetitle not in pages_done_list:
 
@@ -1303,16 +1398,20 @@ for pagetitle in pages_input_list:
       #  Check for new link suggestions
       #
         if success:
-          result = suggested_links_list(page_text, items, ref_pages_list)
+          result = suggested_links_list(page_text, items, ref_pages_list, alt_pages_list)          # 6.6
           
           quit = result[0]
           n_links_created = result[1]
           new_page_text = result[2]
           
+          if quit:
+            outfile.write("Page editing aborted (" + str(n_links_created) + " links created\n")  # 6.6
+          
           if n_links_created > 0 and not quit:
             outfile.write("\nNew page text:============\n" + new_page_text + "\n============\n")
             print("Uploading ",page_name)
             summary_text = str(n_links_created) + " new internal links created" 
+            outfile.write("\n\n" + summary_text + "\n\n")                         # 6.6
             try: 
               result = page.put(new_page_text,summary=summary_text,force=True, asynchronous=True)
             except:

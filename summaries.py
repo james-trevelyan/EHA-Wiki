@@ -14,10 +14,15 @@
  The second item is the wiki page address.
  
  Version 6.5 241010
- Integrated into structure with other apps
- Generate summary only for pages with blank summary entry
- Cleantext preserves link text (***)
+   Integrated into structure with other apps
+   Generate summary only for pages with blank summary entry
+   Cleantext preserves link text (***)
 
+ Version 6.6 241104
+   Add reminder to make sure you are logged in to the Wiki site
+   Summaries file has to be written with utf-8 encoding
+   Adjusted prompt messages for OpenAI API to shorten main page summaries, also place and organisation.
+   
 '''
 import os
 import re 
@@ -382,7 +387,7 @@ def read_list_file(file_name):
 page_list = read_list_file(wkg_folder + pages_file_name)
 editing = EditString()
 new_pages = []
-summaries_file = open(wkg_folder+summaries_file_name,"w")  
+summaries_file = open(wkg_folder+summaries_file_name,"w",encoding="utf-8")  
 
 n_pages = 0
 
@@ -406,7 +411,7 @@ for page_entry in page_list:
       success = False
       
     except:
-      print("Something else went wrong")   
+      print("Something else went wrong: maybe you need to login to the EHA site")   
       outfile.write("Something else went wrong: " + page_name + "\n")
       success = False
       
@@ -426,11 +431,11 @@ for page_entry in page_list:
       elif p_items[0] == "Profile":
         prompt = "Summarize the following biography in about 20 words, emphasizing the engineering achievements, without mentioning the person's name. \n"
       elif p_items[0] == "Place":
-        prompt = "Summarize the following place description in about 20 words, emphasizing the engineering achievements, without mentioning the place name. \n"
+        prompt = "Summarize the following place description in about 20 words. \n"
       elif p_items[0] == "Organisation":
-        prompt = "Summarize the following description of an organisation in about 20 words, emphasizing the engineering achievements, without mentioning the organisation's name. \n"
+        prompt = "Summarize the following description of an organisation in about 20 words without mentioning the organisation's name. \n"
       else:
-        prompt = "Summarize the following text in about 20 words. \n"
+        prompt = "Summarize the following text in no more than 20 words. \n"
       
           
       if len(cleantext)/6 > 50:  # longer than about 50 words?
