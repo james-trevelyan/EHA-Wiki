@@ -13,7 +13,7 @@
  
  Version 0-1: 240831
  Version 6.5 241010
- 
+ Version 6.6 241030 - correction for ref_pages_file_name.
 
 '''
 import os
@@ -29,7 +29,7 @@ wkg_folder = wkg_folder = "C:/Users/HP/OneDrive - Close Comfort Pty Ltd/Document
 xml_data_file = "eha.xml"                                                                  # XML file to be analyzed
 exceptions_file_name = "link_exceptions.txt"                                               # exceptions file
 broken_links_file_name = "broken_links_wiki.txt"                                           # broken links list in wiki format
-ref_pages_list_name = "eha_pages.txt"                                                       # reference file list
+ref_pages_list_name = "pages_ref.txt"                                                       # reference file list
 states = ['National','New South Wales','Queensland','Victoria','Tasmania','South Australia','Australian Capital Territory','Western Australia','Northern Territory']
 broken_links_file = open(wkg_folder + broken_links_file_name, "w", encoding = "utf-8" )
 

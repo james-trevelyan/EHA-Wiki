@@ -31,6 +31,11 @@ Revision 6.5 Integrated with other apps, outputs new pages list
  Summaries and categories appear with small text in wikitabl (to be evaluated)
  (in progress, not yet working)
 
+Revision 6.6 Corrected mispelling of summary in wikitable generation section.
+  New files (without a summary) need a blank summary created so that summaries.py will pick them up.
+  Ignore 3002 page "Profile:Facetedsearch default profile"
+  Ignore pages with "Person:person:" or "Place:Place:" etc. incorrectly formed page title
+
 '''
 import os
 import re 
@@ -612,10 +617,15 @@ while page_data:
         if ipage >= 0:
           summ = summary_list[ipage]
         else:
-          summ = "None"
-        page_entry = (newpagetitle + "|" + pagetitle + "|" + cat_string + "|" + timestamp_mon_year(timestamp) + "|" + life_span + "|" + summ )
-        ppages += [page_entry]
-        outfile.write(page_entry + "\n")
+          summ = ""
+        if pagetitle == "Profile:Facetedsearch default profile":
+          pass
+        elif pagetitle[0:14] == "Person:Person:":
+          pass
+        else:    
+          page_entry = (newpagetitle + "|" + pagetitle + "|" + cat_string + "|" + timestamp_mon_year(timestamp) + "|" + life_span + "|" + summ )
+          ppages += [page_entry]
+          outfile.write(page_entry + "\n")
       
       elif namespace == "3008":   # organization pages
       
@@ -664,10 +674,13 @@ while page_data:
         if ipage >= 0:
           summ = summary_list[ipage]
         else:
-          summ = "None"  
-        page_entry = newpagetitle + "|" + pagetitle + "|" + cat_string + "|" + timestamp_mon_year(timestamp) + "|" + life_span + "|" + summ 
-        opages += [page_entry]
-        outfile.write(page_entry + "\n")
+          summ = ""  
+        if pagetitle[0:26] == "Organisation:Organisation:": 
+          pass
+        else:   
+          page_entry = newpagetitle + "|" + pagetitle + "|" + cat_string + "|" + timestamp_mon_year(timestamp) + "|" + life_span + "|" + summ 
+          opages += [page_entry]
+          outfile.write(page_entry + "\n")
       
       elif namespace == "3004":   # place pages
       
@@ -716,10 +729,13 @@ while page_data:
         if ipage >= 0:
           summ = summary_list[ipage]
         else:
-          summ = "None"  
-        page_entry = newpagetitle + "|" + pagetitle + "|" + cat_string + "|" + timestamp_mon_year(timestamp) + "|" + life_span + "|" + summ
-        plpages += [page_entry]
-        outfile.write(page_entry + "\n")
+          summ = "" 
+        if pagetitle[0:12] == "Place:Place:":   
+          pass
+        else:  
+          page_entry = newpagetitle + "|" + pagetitle + "|" + cat_string + "|" + timestamp_mon_year(timestamp) + "|" + life_span + "|" + summ
+          plpages += [page_entry]
+          outfile.write(page_entry + "\n")
       
       elif namespace == "0":   # main pages
         retain_page = False
@@ -800,7 +816,7 @@ while page_data:
         if ipage >= 0:
           summ = summary_list[ipage]
         else:
-          summ = "None"  
+          summ = ""  
         page_entry = newpagetitle + "|" + pagetitle + "|" + cat_string + "|" + timestamp_mon_year(timestamp) + "|" + life_span + "|" + summ
         if retain_page:
           mpages += [page_entry]
@@ -970,8 +986,10 @@ for page in ppages:
   if first_letter != previous_letter:
     page_breaks += [first_letter]
     breaks += [npage]
+    outfile.write("PPage letter change: [" + previous_letter + "->" + first_letter + "---" + page + "\n") 
     previous_letter = first_letter
 
+outfile.write("Breaks " + str(breaks) + "\n")
 
 if top_links:
   # write line of letter group links  [[#Names A| A ]] | [[#Names B| B ]]
@@ -1034,7 +1052,7 @@ for page in ppages:
         
     wiki_tab.write("{| class = wikitable style=color:black;")
     wiki_tab.write(" background-color:##cfcfcf; callpadding=5; width=100% \n")
-    wiki_tab.write("\n! name !! life-span !! summay [categories] !! timestamp \n")  # table header
+    wiki_tab.write("\n! name !! life-span !! summary [categories] !! timestamp \n")  # table header
   
   # add entry to wiki-table.txt file - names have to be in double quotes for Excel to ignore commas in names
   wiki_tab.write("|-\n| " + "[" + site_URL + re.sub(" ","_",pagetitle) + " " + text + " ] || " + lifespan + " ||")
