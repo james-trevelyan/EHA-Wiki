@@ -46,6 +46,9 @@
  
  Version 6.6
  Additional data file alt_pages_ref.txt stores alternate names for people, organizations, etc. <name>|page name
+ 
+ Version 6.7
+ Working directory changed.
   
 '''
 import os
@@ -62,7 +65,7 @@ pages_ref_file_name = "pages_ref.txt"                                         # 
 pages_input_file_name = "crosslink_pages.txt"                                 # list of pages to be processed
 alternate_names_file = "alt_pages_ref.txt"                                    # alternate names for pages
 pages_done_file_name = "pages_crosslinked.txt"                                # list of pages completed
-wkg_folder = "C:/Users/HP/OneDrive - Close Comfort Pty Ltd/Documents/Python/" # working directory (with slash)
+wkg_folder = "C:/Users/00006605/OneDrive - UWA/Documents/Python/" # working directory (with slash)
 site_URL = "https://eha.mywikis.wiki/wiki/"
 
 

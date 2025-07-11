@@ -23,6 +23,13 @@
    Summaries file has to be written with utf-8 encoding
    Adjusted prompt messages for OpenAI API to shorten main page summaries, also place and organisation.
    
+Version 6.7 250206
+   Updated Perplexity model to sonar-pro   
+   If text too short to summarise, will generate "None?" response that prompts another try later
+   Generate summaries_list.txt to report all new summaries
+   Try "using Australian spelling"
+   Adjusted working directory.
+   
 '''
 import os
 import re 
@@ -33,9 +40,10 @@ import time
 outfile = open("summaries_log.txt","w",encoding="utf-8")                # log file reporting all operations completed
 
 # Specify the folder paths - note that internally Python uses forward slashes, not backslashes as in Windows/MSDOS
-wkg_folder = "C:/Users/HP/OneDrive - Close Comfort Pty Ltd/Documents/Python/" # working directory (with slash)
+wkg_folder = "C:/Users/00006605/OneDrive - UWA/Documents/Python/" # working directory (with slash)
 summaries_file_name = "summaries.txt"                                 # output file with summaries appended to page records
 pages_file_name = "new_pages.txt"                                     # list of pages to be summarised 
+summaries_list_file_name = "summaries_list.txt"                       # listing file
 
 
 
@@ -337,7 +345,8 @@ def get_summary(prompt):
   
   # demo chat completion without streaming
   response = client.chat.completions.create(
-      model="llama-3.1-sonar-large-128k-online", #"llama-3-sonar-small-32k-online",
+#      model="llama-3.1-sonar-large-128k-online", #"llama-3-sonar-small-32k-online",
+      model="sonar-pro", # Feb 25
       messages=messages,
   )
   
@@ -388,6 +397,7 @@ page_list = read_list_file(wkg_folder + pages_file_name)
 editing = EditString()
 new_pages = []
 summaries_file = open(wkg_folder+summaries_file_name,"w",encoding="utf-8")  
+summaries_list_file = open(wkg_folder+summaries_list_file_name,"w",encoding="utf-8")  
 
 n_pages = 0
 
@@ -427,15 +437,15 @@ for page_entry in page_list:
       p_items = separate_text(r'\:',page_name)
       #print(p_items[0])
       if p_items[0] == "Person":
-        prompt = "Summarize the following biography in about 20 words, emphasizing the engineering achievements, without mentioning the person's name. \n"
+        prompt = "Summarize the following biography in about 20 words, emphasizing the engineering achievements, without mentioning the person's name, and using Australian spelling. \n"
       elif p_items[0] == "Profile":
-        prompt = "Summarize the following biography in about 20 words, emphasizing the engineering achievements, without mentioning the person's name. \n"
+        prompt = "Summarize the following biography in about 20 words, emphasizing the engineering achievements, without mentioning the person's name, and using AUstralian spelling. \n"
       elif p_items[0] == "Place":
-        prompt = "Summarize the following place description in about 20 words. \n"
+        prompt = "Summarize the following place description in about 20 words, using AUstralian spelling. \n"
       elif p_items[0] == "Organisation":
-        prompt = "Summarize the following description of an organisation in about 20 words without mentioning the organisation's name. \n"
+        prompt = "Summarize the following description of an organisation in about 20 words without mentioning the organisation's name, using Australian spelling. \n"
       else:
-        prompt = "Summarize the following text in no more than 20 words. \n"
+        prompt = "Summarize the following text in no more than 20 words, using Australian spelling. \n"
       
           
       if len(cleantext)/6 > 50:  # longer than about 50 words?
@@ -444,15 +454,17 @@ for page_entry in page_list:
       
       else:
       
-        reply = "Too short to summarise: " + cleantext[0:100] + "....." 
+        reply = "None?"        #   No summary available, but will try again next time 
       
       outfile.write("Reply: " + reply + "\n\n")
       new_page_entry = items[0] + "|" + items[1] + "|" + items[2] + "|" + items[3] + "|" + items[4] + "|" + "**New**" + reply
       summaries_file.write(new_page_entry + "\n")
+      summaries_list_file.write(items[0] + "\n" + reply + "\n\n")
   
       time.sleep(4.0)  #  keep the process slower than 4 seconds per entry
   else:
     summaries_file.write(page_entry + "\n")
     
 summaries_file.close()  
+summaries_list_file.close()
 outfile.close()  
