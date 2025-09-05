@@ -45,6 +45,10 @@ Revision 6.7
   Extract location info from place pages (250611 - added flag IGNORECASE to trap upper case DISPLAY_MAPS)
   Create location info file for each state and nationally
   Extract displaytitle for map locations (Mike Taylor suggestion) 
+  
+Revision 6.8
+  Tour page generates map entry with tour flag symbol  
+  Local configuration file
 
 '''
 import os
@@ -52,8 +56,14 @@ import re
 import requests
 from urllib.parse import unquote
 
-session = requests.Session()                                    # needed for accessing URLs to download images
-outfile = open("sitemap_log.txt","w",encoding="utf-8")          # log file reporting all operations completed
+#============================================================================================================= 
+# 
+# Define default global configuration variables - Rev 6.8
+# Function read_config_file will override these values later
+#
+#
+
+log_file = "sitemap_log.txt"
 
 # Specify the folder paths - note that internally Python uses forward slashes, not backslashes as in Windows/MSDOS
 # note that other non-local paths may need to be changed.
@@ -83,14 +93,7 @@ categories_file_name = "category_list.txt"                      # categories lis
 download = False    # set to True for media file downloads and access verification are needed
 desc_write = False   # set to True to write description file
 
-# Get a list of all image and media files already in the local media file folder, including PDFs
-# media_file_list = os.listdir(folder_path)  removed at Version 6.7
-
-# Print the number of files in the folder
-#nfiles = len(media_file_list)
-#outfile.write("Media folder contains ")
-#outfile.write(str(nfiles))
-#outfile.write(" files\n\n")
+session = requests.Session()                                    # needed for accessing URLs to download images
 
 #=====================================================================================================
 #
@@ -353,6 +356,64 @@ def separate_text(sep, text):
 
   return items
 
+#=====================================================================================================
+#
+# function to read configuration info from a file 'sitemap_config.txt'
+# function reads text that defines global configuration variables initialized at top of this source file
+# introduced revision 6.8
+#
+
+def read_config_file(file_name):
+  with open(file_name,"r",encoding="utf-8") as file: 
+    list = file.read().splitlines()
+  file.close()
+  for textline in list:
+    items = separate_text("#",textline)  # separate comment if any
+    if len(items) > 0:
+      textline = items[0]
+    else:
+      textline = ""
+    if items[0] != "":
+      print(textline)
+    items = separate_text("=",textline)
+    if len(items) > 0:
+      term = items[0]
+    if len(items) > 1:
+      value = items[1]
+    if term == "log_file":
+      log_file = value;
+    elif term == "wkg_folder_path":
+      wkg_folder = value
+    elif term == "image_folder_path":
+      folder_path = value
+    elif term == "download_folder_path":
+      download_path = value
+    elif term == "description_folder_path":
+      description_folder = value
+    elif term == "xml_data_file":
+      xml_data_file = value
+    elif term == "page_ref_file":
+      page_ref_file_name = value
+    elif term == "wiki_table_file":
+      wiki_table_file = value
+    elif term == "new_pages_file":
+      new_pages_file_nam = value
+    elif term == "csv_file":
+      csv_file_name = value
+    elif term == "media_file_list":
+      media_file_list_name = value
+    elif term == "site_URL":
+      site_URL = value
+    elif term == "media_URL":
+      wiki_url = value
+    elif term == "categories_file":
+      categories_file_name = value
+    elif term == "download_media":
+      download = True
+    elif term == "write_descriptions":
+      desc_write = True
+  return
+
 #====================================================================================================
 #
 # function to identify image and media file references and download files to local media folder 
@@ -556,7 +617,7 @@ def generate_map_wiki_file(map_file_name, state_cat, locations, height):
 # locations += [(pagetitle, latlong, cat_string, summ)]
 #
 def generate_location_entries(mapfile, state_cat, locations):  
-  cat_type = ["none","EHM","EHNM","EHIM"]
+  cat_type = ["none","EHM","EHNM","EHIM","Tours"]
 
   for category in cat_type:
     for loc in locations:
@@ -579,6 +640,7 @@ def generate_location_entries(mapfile, state_cat, locations):
         # Check for categories 
         if state_cat == "" or re.search(state_cat, cat_string, flags=re.IGNORECASE ): 
           if re.search(category,cat_string):
+            outfile.write(f"Pin: {pagetitle}::{category},,{cat_string}\n")  # Rev 6.8
             marker = ""
             if re.search("EHIM", cat_string): 
               marker = "yellow_pin_marker.png" 
@@ -586,10 +648,13 @@ def generate_location_entries(mapfile, state_cat, locations):
               marker = "orange_pin_marker.png" 
             elif re.search("EHM", cat_string): 
               marker = "blue_pin_marker.png" 
+            elif re.search("Tours", cat_string):    # Rev 6.8
+              marker = "Tour_pin.png"
             if marker != "":  
               outstring = f"  {lat:f},{long:f}~{display_title}~{summ} [[{pagetitle} | (more information)]]~{marker};\n" 
               mapfile.write(outstring) 
           elif category == "none":  # places of interest are done first so they don't obscure the more important markers
+            outfile.write(f"Pin: {pagetitle}::{category}||{cat_string}\n")   # Rev 6.8
             include = True
             marker = "brown_pin_marker.png"
             if re.search("EHIM", cat_string): 
@@ -598,6 +663,9 @@ def generate_location_entries(mapfile, state_cat, locations):
               include = False 
             elif re.search("EHM", cat_string): 
               include = False 
+            elif re.search("Tours", cat_string):  # Rev 6.8
+              marker = "Tour_pin.png"
+              include = False
             if include:  
               outstring = f"  {lat:f},{long:f}~{display_title}~{summ} [[{pagetitle} | (more information)]]~{marker};\n" 
               mapfile.write(outstring) 
@@ -611,6 +679,9 @@ def generate_location_entries(mapfile, state_cat, locations):
 #
 # Main XML file processing code
 #
+
+read_config_file("sitemap_config.txt")    # Rev 6.8 - read configuration file
+outfile = open(log_file,"w",encoding="utf-8")  # log file reporting all operations completed  rev 6.7 changed to UTF-8
 
 
 # Read XML file into string "filetext"
@@ -948,6 +1019,7 @@ while page_data:
           wikitext = remaining_page_text
           life_span = ""
           display_title = displaytitle(remaining_page_text)
+          latlonglist = place_location(newpagetitle, remaining_page_text) # rev 6.8 tour locations
           
           category_match = re.search(r'\[\[Category:(.+?)\]\]', remaining_page_text, flags=re.IGNORECASE)
           while category_match:
@@ -977,6 +1049,9 @@ while page_data:
         if retain_page:
           mpages += [page_entry]
         outfile.write(page_entry + "\n")
+        if latlonglist != []:
+          for latlong in latlonglist:  # Rev 6.8
+            locations += [(newpagetitle, display_title, latlong, cat_string, summ)]  # rev 6.7 locations
       
         for link in bad_link_list:
           bad_links += [link] 
@@ -1406,16 +1481,15 @@ print(str(n_mpages)," top-level or unclassified pages\n")
 
 wiki_tab.close()
 csv_file.close()
-outfile.close()
 
-generate_map_wiki_file("map_file", "Western Australia", locations, 600)    # rev 6.7 locations
-generate_map_wiki_file("map_file", "Queensland", locations, 600)    # rev 6.7 locations
-generate_map_wiki_file("map_file", "New South Wales", locations, 600)    # rev 6.7 locations
-generate_map_wiki_file("map_file", "Victoria", locations, 600)    # rev 6.7 locations
-generate_map_wiki_file("map_file", "Tasmania", locations, 600)    # rev 6.7 locations
-generate_map_wiki_file("map_file", "South Australia", locations, 600)    # rev 6.7 locations
-generate_map_wiki_file("map_file", "Northern Territory", locations, 600)    # rev 6.7 locations
-generate_map_wiki_file("map_file", "", locations, 600)    # rev 6.7 locations
+#generate_map_wiki_file("map_file", "Western Australia", locations, 600)    # rev 6.7 locations
+#generate_map_wiki_file("map_file", "Queensland", locations, 600)    # rev 6.7 locations
+#generate_map_wiki_file("map_file", "New South Wales", locations, 600)    # rev 6.7 locations
+#generate_map_wiki_file("map_file", "Victoria", locations, 600)    # rev 6.7 locations
+#generate_map_wiki_file("map_file", "Tasmania", locations, 600)    # rev 6.7 locations
+#generate_map_wiki_file("map_file", "South Australia", locations, 600)    # rev 6.7 locations
+#generate_map_wiki_file("map_file", "Northern Territory", locations, 600)    # rev 6.7 locations
+generate_map_wiki_file("map_file", "", locations, 600)    # rev 6.7 locations all states
 
 
 #outfile = open("new_media_file_list.txt","w",encoding="UTF-8")  Removed at Version 6.7
