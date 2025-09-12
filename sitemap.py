@@ -377,7 +377,7 @@ def read_config_file(file_name):
       print(textline)
     items = separate_text("=",textline)
     if len(items) > 0:
-      term = items[0]
+      term = re.sub(r'/"',"", items[0])
     if len(items) > 1:
       value = items[1]
     if term == "log_file":

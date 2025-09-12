@@ -1,0 +1,6 @@
+log_file = "check_links_log.txt"                                                        # log file name
+wkg_folder = wkg_folder = "C:/Users/00006605/OneDrive - UWA/Documents/Python/" # working directory (with slash)
+xml_data_file = "eha.xml"                                                                  # XML file to be analyzed
+exceptions_file = "link_exceptions.txt"                                               # exceptions file
+broken_links_file = "broken_links_wiki.txt"                                           # broken links list in wiki format
+ref_pages_list = "pages_ref.txt"                                                       # reference file list

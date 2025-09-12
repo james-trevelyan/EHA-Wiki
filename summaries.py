@@ -30,6 +30,10 @@ Version 6.7 250206
    Try "using Australian spelling"
    Adjusted working directory.
    
+Version 6.8 250905
+   Configuration file   
+   
+   
 '''
 import os
 import re 
@@ -37,8 +41,8 @@ from urllib.parse import unquote
 import pywikibot
 import time
 
-outfile = open("summaries_log.txt","w",encoding="utf-8")                # log file reporting all operations completed
 
+log_file = "summaries_log.txt"
 # Specify the folder paths - note that internally Python uses forward slashes, not backslashes as in Windows/MSDOS
 wkg_folder = "C:/Users/00006605/OneDrive - UWA/Documents/Python/" # working directory (with slash)
 summaries_file_name = "summaries.txt"                                 # output file with summaries appended to page records
@@ -46,6 +50,41 @@ pages_file_name = "new_pages.txt"                                     # list of 
 summaries_list_file_name = "summaries_list.txt"                       # listing file
 
 
+#=====================================================================================================
+#
+# function to read configuration info from a file 'check_links_config.txt'
+# function reads text that defines global configuration variables initialized at top of this source file
+# introduced revision 6.8
+#
+
+def read_config_file(file_name):
+  with open(file_name,"r",encoding="utf-8") as file: 
+    list = file.read().splitlines()
+  file.close()
+  for textline in list:
+    items = separate_text("#",textline)  # separate comment if any
+    if len(items) > 0:
+      textline = items[0]
+    else:
+      textline = ""
+    if items[0] != "":
+      print(textline)
+    items = separate_text("=",textline)
+    if len(items) > 0:
+      term = re.sub(r'/"',"", items[0])
+    if len(items) > 1:
+      value = items[1]
+    if term == "log_file":
+      log_file = value;
+    elif term == "wkg_folder_path":
+      wkg_folder = value
+    elif term == "summaries_file":
+      summaries_file_name = value
+    elif term == "pages_file_name":
+      pages_file_name = value
+    elif term == "summaries_list_file":
+      summaries_list_file_name = value
+  return
 
 
 #=====================================================================================
@@ -392,6 +431,9 @@ def read_list_file(file_name):
 #  4) Append summary to pages list item
 #  5) Re-write pages list with summary info
 #
+
+read_config_file("summaries_config.txt")     #  Rev 6.8
+outfile = open(log_file,"w",encoding="utf-8")                # log file reporting all operations completed
 
 page_list = read_list_file(wkg_folder + pages_file_name)
 editing = EditString()

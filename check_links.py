@@ -14,6 +14,8 @@
  Version 0-1: 240831
  Version 6.5 241010
  Version 6.6 241030 - correction for ref_pages_file_name.
+ Version 6.7 250510 - changed working directory
+ Version 6.8 250905 - introduced configuration file check_links_config.txt
 
 '''
 import os
@@ -22,16 +24,16 @@ import requests
 from urllib.parse import unquote
 import time
 
-log_file_name = "checklink_log.txt"                                                        # log file name
-outfile = open(log_file_name,"w",encoding="utf-8")                                         # log file reporting all operations completed
+# define default global configuration variables Rev 6.8
 
-wkg_folder = wkg_folder = "C:/Users/HP/OneDrive - Close Comfort Pty Ltd/Documents/Python/" # working directory (with slash)
+log_file = "checklink_log.txt"                                                        # log file name
+wkg_folder = wkg_folder = "C:/Users/00006605/OneDrive - UWA/Documents/Python/" # working directory (with slash)
 xml_data_file = "eha.xml"                                                                  # XML file to be analyzed
 exceptions_file_name = "link_exceptions.txt"                                               # exceptions file
 broken_links_file_name = "broken_links_wiki.txt"                                           # broken links list in wiki format
 ref_pages_list_name = "pages_ref.txt"                                                       # reference file list
 states = ['National','New South Wales','Queensland','Victoria','Tasmania','South Australia','Australian Capital Territory','Western Australia','Northern Territory']
-broken_links_file = open(wkg_folder + broken_links_file_name, "w", encoding = "utf-8" )
+
 
 
 
@@ -559,6 +561,44 @@ def search_exceptions(pagetitle, URL, error_code, exceptions):
           return True
 #  print(items,pagetitle,URL,error_code)        
   return False
+  
+#=====================================================================================================
+#
+# function to read configuration info from a file 'check_links_config.txt'
+# function reads text that defines global configuration variables initialized at top of this source file
+# introduced revision 6.8
+#
+
+def read_config_file(file_name):
+  with open(file_name,"r",encoding="utf-8") as file: 
+    list = file.read().splitlines()
+  file.close()
+  for textline in list:
+    items = separate_text("#",textline)  # separate comment if any
+    if len(items) > 0:
+      textline = items[0]
+    else:
+      textline = ""
+    if items[0] != "":
+      print(textline)
+    items = separate_text("=",textline)
+    if len(items) > 0:
+      term = re.sub(r'/"',"", items[0])
+    if len(items) > 1:
+      value = items[1]
+    if term == "log_file":
+      log_file = value;
+    elif term == "wkg_folder_path":
+      wkg_folder = value
+    elif term == "xml_data_file":
+      xml_data_file = value
+    elif term == "ref_pages_list":
+      page_ref_file_name = value
+    elif term == "exceptions_file":
+      exceptions_file_name = value
+    elif term == "broken_links_file":
+      broken_links_file_name = value
+  return
 
 #==========================================================================================
 #
@@ -575,7 +615,9 @@ def search_exceptions(pagetitle, URL, error_code, exceptions):
 # 
 # 
 
-
+read_config_file("check_links_config.txt")
+outfile = open(log_file,"w",encoding="utf-8")     # Rev 6.8 log file reporting all operations completed
+broken_links_file = open(wkg_folder + broken_links_file_name, "w", encoding = "utf-8" )
 
 new_exceptions = []
 

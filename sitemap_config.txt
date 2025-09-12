@@ -27,4 +27,4 @@ wiki_url = "https://mywikis-wiki-media.s3.us-central-1.wasabisys.com/eha/"
 categories_file_name = "category_list.txt"                      # categories list
 
 #download = True                # remove comment if media file downloads and access verification are needed
-#write_descriptions = False   # remove comment to write description files
+#write_descriptions = False     # remove comment to write description files

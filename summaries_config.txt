@@ -1,0 +1,6 @@
+log_file = "summaries_log.txt"
+# Specify the folder paths - note that internally Python uses forward slashes, not backslashes as in Windows/MSDOS
+wkg_folder = "C:/Users/00006605/OneDrive - UWA/Documents/Python/" # working directory (with slash)
+summaries_file = "summaries.txt"                                 # output file with summaries appended to page records
+pages_file = "new_pages.txt"                                     # list of pages to be summarised 
+summaries_list_file = "summaries_list.txt"                       # listing file
