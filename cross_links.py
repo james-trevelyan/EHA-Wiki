@@ -1435,7 +1435,7 @@ for pagetitle in pages_input_list:
           success = False
           
         except:
-          print("Something else went wrong")   
+          print("Unable to access wiki page ",page_name, " because domething else went wrong: are you logged in?")   
           outfile.write("Something else went wrong: " + page_name + "\n")
           success = False
       
