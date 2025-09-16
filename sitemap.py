@@ -4,6 +4,7 @@
  
  This script processes an XML file created by a backup of the entire wiki site. Partial 
  backups or category exports can also be processed.
+ 
 
  Scans an exported XML file of the entire site
  1) Generates a site map listing in wiki text form to be displayed on a sitemap page the wiki site.
@@ -63,16 +64,16 @@ from urllib.parse import unquote
 #
 #
 
-log_file = "sitemap_log.txt"
+log_file = "blank1"
 
 # Specify the folder paths - note that internally Python uses forward slashes, not backslashes as in Windows/MSDOS
 # note that other non-local paths may need to be changed.
 
-wkg_folder = "C:/Users/00006605/OneDrive - UWA/Documents/Python/" # working directory (with slash)
+wkg_folder = "Blank2" # working directory (with slash)
 
-folder_path = "C:/D/2024/240315_EHWA/eha"                       # folder containing image files (no slash at end)
-download_path = "C:/D/2024/240315_EHWA/eha-downloads/"          # folder for image downloads
-description_folder = "C:/D/2024/240315_EHWA/desc/"              # image descriptions folder (with a slash)
+folder_path = "Blank3"                                          # folder containing image files (no slash at end)
+download_path = "Blank4"                                        # folder for image downloads
+description_folder = "Blank5"                                   # image descriptions folder (with a slash)
 
 xml_data_file   =  "eha.xml"                                    # xml data file to be processed
 page_ref_file_name = "pages_ref.txt"                            # pages reference file
@@ -364,6 +365,8 @@ def separate_text(sep, text):
 #
 
 def read_config_file(file_name):
+  global log_file, wkg_folder, folder_path, download_path, description_folder, xml_data_file, page_ref_file_name, wiki_table_file
+  global new_pages_file_name, csv_file_name, media_file_list_name, site_URL, wiki_URL, categories_file_name, desc_write, download
   with open(file_name,"r",encoding="utf-8") as file: 
     list = file.read().splitlines()
   file.close()
@@ -374,16 +377,16 @@ def read_config_file(file_name):
     else:
       textline = ""
     if items[0] != "":
-      print(textline)
+      print("--",textline)
     items = separate_text("=",textline)
     if len(items) > 0:
-      term = re.sub(r'/"',"", items[0])
+      term = re.sub(r'\"',"", items[0]).strip()  # remove " characters
     if len(items) > 1:
-      value = items[1]
+      value = re.sub(r'\"',"", items[1]).strip() # remove " characters
     if term == "log_file":
       log_file = value;
     elif term == "wkg_folder_path":
-      wkg_folder = value
+      wkg_folder = re.sub(r'\\',r'/',value)  # substitute / for \ characters
     elif term == "image_folder_path":
       folder_path = value
     elif term == "download_folder_path":
@@ -412,6 +415,10 @@ def read_config_file(file_name):
       download = True
     elif term == "write_descriptions":
       desc_write = True
+    else:
+      if textline != "":
+        print("Invalid configuration term ",term)
+        
   return
 
 #====================================================================================================
@@ -682,7 +689,7 @@ def generate_location_entries(mapfile, state_cat, locations):
 
 read_config_file("sitemap_config.txt")    # Rev 6.8 - read configuration file
 outfile = open(log_file,"w",encoding="utf-8")  # log file reporting all operations completed  rev 6.7 changed to UTF-8
-
+print("Working folder set to:",wkg_folder,"|")
 
 # Read XML file into string "filetext"
 

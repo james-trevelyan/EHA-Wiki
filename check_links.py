@@ -26,12 +26,12 @@ import time
 
 # define default global configuration variables Rev 6.8
 
-log_file = "checklink_log.txt"                                                        # log file name
-wkg_folder = wkg_folder = "C:/Users/00006605/OneDrive - UWA/Documents/Python/" # working directory (with slash)
-xml_data_file = "eha.xml"                                                                  # XML file to be analyzed
-exceptions_file_name = "link_exceptions.txt"                                               # exceptions file
-broken_links_file_name = "broken_links_wiki.txt"                                           # broken links list in wiki format
-ref_pages_list_name = "pages_ref.txt"                                                       # reference file list
+log_file = "blank1"                                                       
+wkg_folder = "blank2" # working directory (with slash)
+xml_data_file = "blank3"                                                                 
+exceptions_file_name = "blank4"                                               
+broken_links_file_name = "blank5"                                           
+ref_pages_list_name = "blank6"                                                       
 states = ['National','New South Wales','Queensland','Victoria','Tasmania','South Australia','Australian Capital Territory','Western Australia','Northern Territory']
 
 
@@ -570,6 +570,8 @@ def search_exceptions(pagetitle, URL, error_code, exceptions):
 #
 
 def read_config_file(file_name):
+  global wkg_folder, log_file, xml_data_file, exceptions_file_name, broken_links_file_name
+  global ref_pages_list_name
   with open(file_name,"r",encoding="utf-8") as file: 
     list = file.read().splitlines()
   file.close()
@@ -580,24 +582,27 @@ def read_config_file(file_name):
     else:
       textline = ""
     if items[0] != "":
-      print(textline)
+      print("--",textline)
     items = separate_text("=",textline)
     if len(items) > 0:
-      term = re.sub(r'/"',"", items[0])
+      term = re.sub(r'\"',"", items[0]).strip()  # remove " characters
     if len(items) > 1:
-      value = items[1]
+      value = re.sub(r'\"',"", items[1]).strip() # remove " characters
     if term == "log_file":
       log_file = value;
-    elif term == "wkg_folder_path":
-      wkg_folder = value
+    elif term == "wkg_folder":
+      wkg_folder = re.sub(r'\\',r'/',value)  # substitute / for \ characters
     elif term == "xml_data_file":
       xml_data_file = value
     elif term == "ref_pages_list":
-      page_ref_file_name = value
+      ref_pages_list_name = value
     elif term == "exceptions_file":
       exceptions_file_name = value
     elif term == "broken_links_file":
       broken_links_file_name = value
+    else:
+      if textline != "":
+        print("Invalid configuration term ",term)
   return
 
 #==========================================================================================

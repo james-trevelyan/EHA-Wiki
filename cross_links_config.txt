@@ -1,10 +1,10 @@
 #
 # Configuration file for cross_links.py
 #
-log_file_name = "cross_links_log.txt"                               # log file name
-pages_ref_file_name = "pages_ref.txt"                               # list of pages on site with names, summaries
-pages_input_file_name = "crosslink_pages.txt"                       # list of pages to be processed
-alternate_names_file = "alt_pages_ref.txt"                          # alternate names for pages
-pages_done_file_name = "pages_crosslinked.txt"                      # list of pages completed
+log_file = "cross_links_log.txt"                               # log file name
+pages_ref_file = "pages_ref.txt"                               # list of pages on site with names, summaries
+pages_input_file = "crosslink_pages.txt"                       # list of pages to be processed
+alternate_names_file = "alt_pages_ref.txt"                     # alternate names for pages
+pages_done_file = "pages_crosslinked.txt"                      # list of pages completed
 wkg_folder_path = "C:/Users/00006605/OneDrive - UWA/Documents/Python/" # working directory (with slash)
 site_URL = "https://eha.mywikis.wiki/wiki/"                         # site URL

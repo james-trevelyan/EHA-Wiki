@@ -42,12 +42,11 @@ import pywikibot
 import time
 
 
-log_file = "summaries_log.txt"
-# Specify the folder paths - note that internally Python uses forward slashes, not backslashes as in Windows/MSDOS
-wkg_folder = "C:/Users/00006605/OneDrive - UWA/Documents/Python/" # working directory (with slash)
-summaries_file_name = "summaries.txt"                                 # output file with summaries appended to page records
-pages_file_name = "new_pages.txt"                                     # list of pages to be summarised 
-summaries_list_file_name = "summaries_list.txt"                       # listing file
+log_file = "blank1"
+wkg_folder = "./" # working directory (with slash)
+summaries_file_name = "blank3"                                 # output file with summaries appended to page records
+pages_file_name = "blank4"                                     # list of pages to be summarised 
+summaries_list_file_name = "blank5"                       # listing file
 
 
 #=====================================================================================================
@@ -58,6 +57,7 @@ summaries_list_file_name = "summaries_list.txt"                       # listing 
 #
 
 def read_config_file(file_name):
+  global log_file, wkg_folder, summaries_file_name, pages_file_name, summaries_list_file_name
   with open(file_name,"r",encoding="utf-8") as file: 
     list = file.read().splitlines()
   file.close()
@@ -68,22 +68,25 @@ def read_config_file(file_name):
     else:
       textline = ""
     if items[0] != "":
-      print(textline)
+      print("--",textline)
     items = separate_text("=",textline)
     if len(items) > 0:
-      term = re.sub(r'/"',"", items[0])
+      term = re.sub(r'\"',"", items[0]).strip()  # remove " characters
     if len(items) > 1:
-      value = items[1]
+      value = re.sub(r'\"',"", items[1]).strip() # remove " characters
     if term == "log_file":
       log_file = value;
-    elif term == "wkg_folder_path":
-      wkg_folder = value
+    elif term == "wkg_folder":
+      wkg_folder = re.sub(r'\\',r'/',value)  # substitute / for \ characters
     elif term == "summaries_file":
       summaries_file_name = value
-    elif term == "pages_file_name":
+    elif term == "pages_file":
       pages_file_name = value
     elif term == "summaries_list_file":
       summaries_list_file_name = value
+    else:
+      if textline != "":
+        print("Invalid configuration term ",term)
   return
 
 

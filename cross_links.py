@@ -52,6 +52,7 @@
  
  Version 6.8 
  Configuration file used to initialize glopbals.
+ Had to enlarge error message for when user not logged in and cannot access wiki, add break
   
 '''
 import os
@@ -62,12 +63,12 @@ import pywikibot
 import colorama
 from colorama import Fore, Back, Style, Cursor
 
-log_file_name = "cross_links_log.txt"                                         # log file name
-pages_ref_file_name = "pages_ref.txt"                                         # list of pages on site with names, summaries
-pages_input_file_name = "crosslink_pages.txt"                                 # list of pages to be processed
-alternate_names_file = "alt_pages_ref.txt"                                    # alternate names for pages
-pages_done_file_name = "pages_crosslinked.txt"                                # list of pages completed
-wkg_folder = "C:/Users/00006605/OneDrive - UWA/Documents/Python/" # working directory (with slash)
+log_file_name = "blank1"                                         # log file name
+pages_ref_file_name = "blank2"                                         # list of pages on site with names, summaries
+pages_input_file_name = "blank3"                                 # list of pages to be processed
+alternate_names_file = "blank4"                                    # alternate names for pages
+pages_done_file_name = "blank5"                                # list of pages completed
+wkg_folder = "./" # working directory (with slash)
 site_URL = "https://eha.mywikis.wiki/wiki/"
 
 
@@ -1353,6 +1354,8 @@ def suggested_links_list(pagetext, page_items, pages_list, alt_pages_list):   # 
 #
 
 def read_config_file(file_name):
+  global log_file_name, pages_ref_file_name, pages_input_file_name, alternate_names_file
+  global pages_done_file_name, wkg_folder, site_URL 
   with open(file_name,"r",encoding="utf-8") as file: 
     list = file.read().splitlines()
   file.close()
@@ -1363,29 +1366,30 @@ def read_config_file(file_name):
     else:
       textline = ""
     if items[0] != "":
-      print(textline)
+      print("--", textline)
     items = separate_text("=",textline)
     if len(items) > 0:
-      term = re.sub(r'/"',"", items[0])
+      term = re.sub(r'\"',"", items[0]).strip()  # remove " characters
     if len(items) > 1:
-      value = items[1]
-    if term == "log_file_name":
+      value = re.sub(r'\"',"", items[1]).strip() # remove " characters
+    if term == "log_file":
       log_file_name = value;
     elif term == "wkg_folder_path":
-      wkg_folder = value
-    elif term == "xml_data_file":
-      xml_data_file = value
-    elif term == "pages_ref_file_name":
+      wkg_folder = re.sub(r'\\',r'/',value)  # substitute / for \ characters
+    elif term == "pages_ref_file":
       pages_ref_file_name = value
-    elif term == "pages_input_file_name":
+    elif term == "pages_input_file":
       pages_input_file_name = value
     elif term == "alternate_names_file":
       alternate_names_file = value
-    elif term == "pages_done_file_name":
+    elif term == "pages_done_file":
       pages_done_file_name = value  
     elif term == "site_URL":
       site_URL = value  
-    return
+    else:
+      if textline != "":
+        print("Invalid configuration term ",term)
+  return
   
 #==========================================================================================
 #
@@ -1434,10 +1438,11 @@ for pagetitle in pages_input_list:
           outfile.write("Redirect error:" + page_name + "\n")
           success = False
           
-        except:
+        except:  # Rev 6.8
           print("Unable to access wiki page ",page_name, " because domething else went wrong: are you logged in?")   
           outfile.write("Something else went wrong: " + page_name + "\n")
           success = False
+          break
       
         #outfile.write("\n\n\nPage text:============\n" + page_text + "\n============\n")
       
